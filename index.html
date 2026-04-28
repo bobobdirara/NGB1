@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>내부품질기한 계산기</title>
+<style>
+:root{
+  --sb:#006241;
+  --sb-dark:#004c32;
+  --cream:#f7f3ea;
+  --card:#fffdf8;
+  --line:#e6ded1;
+  --text:#1f2933;
+  --muted:#6b7280;
+  --soft:#eef7f2;
+
+  --sun:#e53935;
+  --mon:#fb8c00;
+  --tue:#f6c700;
+  --wed:#2e9d56;
+  --thu:#1ca9dc;
+  --fri:#1e3a8a;
+  --sat:#8e24aa;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:linear-gradient(180deg,#f7f3ea 0%,#f4f1eb 100%);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif;
+  color:var(--text);
+}
+
+header{
+  background:linear-gradient(135deg,var(--sb),var(--sb-dark));
+  color:white;
+  padding:18px 16px 22px;
+  border-bottom-left-radius:28px;
+  border-bottom-right-radius:28px;
+  box-shadow:0 8px 24px rgba(0,98,65,.22);
+}
+
+h1{
+  font-size:22px;
+  margin:0 0 6px;
+  font-weight:950;
+  letter-spacing:-.6px;
+}
+
+.sub{
+  font-size:13px;
+  opacity:.92;
+  line-height:1.45;
+}
+
+main{
+  max-width:820px;
+  margin:0 auto;
+  padding:14px;
+}
+
+.panel{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:16px;
+  margin-bottom:13px;
+  box-shadow:0 6px 20px rgba(57,42,20,.08);
+}
+
+label{
+  display:block;
+  font-size:13px;
+  font-weight:900;
+  margin:12px 0 7px;
+}
+
+input,select{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:12px 13px;
+  font-size:15px;
+  background:#fff;
+  color:var(--text);
+  outline:none;
+}
+
+input:focus,select:focus{
+  border-color:var(--sb);
+  box-shadow:0 0 0 3px rgba(0,98,65,.12);
+}
+
+..dateTimeRow{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 92px;
+  gap:8px;
+  align-items:end;
+}
+
+.dateTimeRow input,
+.dateTimeRow select{
+  min-width:0;
+  height:52px;
+  padding:10px 11px;
+  font-size:14px;
+}
+
+#baseHour{
+  text-align:center;
+}
+
+.hint,.notice{
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.55;
+  margin-top:8px;
+}
+
+.list{
+  margin-top:12px;
+  display:grid;
+  gap:9px;
+}
+
+.item{
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:13px;
+  background:#fff;
+  cursor:pointer;
+  transition:.15s;
+}
+
+.item:active{
+  transform:scale(.99);
+  background:#f4faf6;
+}
+
+.item b{
+  display:block;
+  font-size:15px;
+  margin-bottom:7px;
+  line-height:1.35;
+  letter-spacing:-.2px;
+}
+
+.item span{
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.45;
+}
+
+.result{
+  display:none;
+}
+
+.result.show{
+  display:block;
+}
+
+.name{
+  font-size:21px;
+  font-weight:950;
+  margin-bottom:8px;
+  line-height:1.35;
+  letter-spacing:-.5px;
+}
+
+.chips{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+.chip{
+  display:inline-flex;
+  align-items:center;
+  border-radius:999px;
+  background:var(--soft);
+  color:var(--sb);
+  padding:5px 10px;
+  font-size:12px;
+  font-weight:900;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:88px 1fr;
+  gap:8px 10px;
+  font-size:14px;
+  line-height:1.55;
+  margin-top:8px;
+}
+
+.k{
+  color:var(--muted);
+  font-weight:800;
+}
+
+.expireBox{
+  margin-top:15px;
+  border-radius:24px;
+  padding:16px;
+  border:2px solid transparent;
+  background:#f7f7f7;
+}
+
+.expireTitle{
+  font-size:13px;
+  font-weight:950;
+  opacity:.85;
+}
+
+.expireDate{
+  font-size:29px;
+  font-weight:1000;
+  margin-top:5px;
+  letter-spacing:-.7px;
+}
+
+.expireMeta{
+  font-size:13px;
+  margin-top:7px;
+  line-height:1.45;
+}
+
+.empty{
+  font-size:13px;
+  color:var(--muted);
+  padding:18px;
+  text-align:center;
+}
+
+.sun{background:#fff1f1;border-color:var(--sun)}
+.sun .expireDate{color:var(--sun)}
+
+.mon{background:#fff5e6;border-color:var(--mon)}
+.mon .expireDate{color:var(--mon)}
+
+.tue{background:#fffbe0;border-color:var(--tue)}
+.tue .expireDate{color:#9a7700}
+
+.wed{background:#ebf8ef;border-color:var(--wed)}
+.wed .expireDate{color:var(--wed)}
+
+.thu{background:#eaf8fd;border-color:var(--thu)}
+.thu .expireDate{color:#087ea4}
+
+.fri{background:#edf0fb;border-color:var(--fri)}
+.fri .expireDate{color:var(--fri)}
+
+.sat{background:#f7ebfa;border-color:var(--sat)}
+.sat .expireDate{color:var(--sat)}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>내부품질기한 계산기</h1>
+  <div class="sub">부재료 검색 → 보관기준 확인 → 날짜/시간 선택 → 당일 포함 계산</div>
+</header>
+
+<main>
+<section class="panel">
+  <label>부재료 이름 검색</label>
+  <input id="search" placeholder="예: 말차, 딸기, 우유, 콜드브루, 자바칩, 시럽">
+  <div class="hint">품목을 누르면 보관기준과 내부품질기한이 표시됨.</div>
+  <div id="list" class="list"></div>
+</section>
+
+<section id="result" class="panel result">
+  <div class="name" id="rName"></div>
+
+  <div class="chips">
+    <span class="chip" id="rCat"></span>
+    <span class="chip" id="rStore"></span>
+  </div>
+
+  <div class="grid">
+    <div class="k">보관기준</div><div id="rStore2"></div>
+    <div class="k">소분 후</div><div id="rPortion"></div>
+    <div class="k">개봉 후</div><div id="rPack"></div>
+    <div class="k">표기법</div><div id="rTag"></div>
+    <div class="k">참고</div><div id="rNote"></div>
+  </div>
+
+  <label>계산 기준 선택</label>
+  <select id="mode"></select>
+
+  <div class="dateTimeRow">
+    <div>
+      <label>날짜 선택</label>
+      <input id="baseDate" type="date">
+    </div>
+    <div>
+      <label>시간</label>
+      <select id="baseHour"></select>
+    </div>
+  </div>
+
+  <div id="expireBox" class="expireBox">
+    <div class="expireTitle">계산된 내부품질기한</div>
+    <div id="expireDate" class="expireDate"></div>
+    <div id="expireMeta" class="expireMeta"></div>
+  </div>
+</section>
+
+<section class="panel notice">
+  계산 방식: 내부품질기한은 항상 <b>당일 포함</b>.  
+  예: 2d 기준에서 4월 10일 선택 시 만료일은 4월 11일.  
+  H 기준은 선택한 시간 기준으로 계산됨.
+</section>
+</main>
+
+<script>
+const DATA=[
+{cat:"커피",name:"오늘의 커피 URN",store:"타이머 / 71℃ 이상",portion:"1H",pack:"",tag:"기록 작성",note:"추출 후 1H"},
+{cat:"커피",name:"아이스 커피",store:"실온",portion:"4H",pack:"",tag:"",note:"추출 후 4H. 매장 상황에 따라 선택 가능. 단, 교차보관 금지"},
+{cat:"커피",name:"아이스 커피",store:"냉장",portion:"8H",pack:"",tag:"",note:"추출 후 8H. 매장 상황에 따라 선택 가능. 단, 교차보관 금지"},
+{cat:"커피",name:"갈은 커피 드립/에스프레소칩용",store:"실온",portion:"24H",pack:"",tag:"숫자 Tag + Price Tag",note:"제조 후 24H"},
+{cat:"커피",name:"콜드브루 커피 추출액",store:"냉장",portion:"7d",pack:"",tag:"숫자 Tag + Price Tag",note:"리저브 공통"},
+{cat:"커피",name:"콜드브루 커피 추출액 원액 보틀",store:"냉장",portion:"3d",pack:"",tag:"넥 Tag + Price Tag",note:"시그니처 더 블랙 콜드브루"},
+{cat:"커피",name:"원두 5lb / 1lb / 250g",store:"실온",portion:"",pack:"7d",tag:"수기 기입 또는 Price Tag",note:"개봉일~만료일"},
+
+{cat:"티",name:"티바나 더블 스트랭스 티",store:"실온",portion:"",pack:"3M",tag:"수기 기입 또는 Price Tag",note:"개봉일~만료일"},
+
+{cat:"휘핑크림/제조베이스",name:"휘핑크림",store:"냉장",portion:"24H",pack:"",tag:"숫자 Tag + Price Tag",note:"제조 후 24H"},
+{cat:"휘핑크림/제조베이스",name:"Half & Half",store:"냉장",portion:"24H",pack:"",tag:"숫자 Tag + Price Tag",note:"제조 후 24H"},
+{cat:"휘핑크림/제조베이스",name:"딸기 리프레셔 믹스",store:"냉장",portion:"24H",pack:"",tag:"숫자 Tag + Price Tag",note:"제조 후 24H"},
+{cat:"휘핑크림/제조베이스",name:"클래식 밀크 티 베이스",store:"냉장",portion:"24H",pack:"",tag:"숫자 Tag + Price Tag",note:"제조 후 24H"},
+{cat:"휘핑크림/제조베이스",name:"클래식 밀크티 보틀",store:"냉장",portion:"2d",pack:"",tag:"넥 Tag + Price Tag",note:""},
+{cat:"휘핑크림/제조베이스",name:"슈크림 휘핑",store:"냉장",portion:"24H",pack:"",tag:"숫자 Tag + Price Tag",note:"제조 후 24H"},
+
+{cat:"소스",name:"모카소스 초콜릿 드리즐 포함",store:"실온",portion:"24H",pack:"",tag:"숫자 Tag + Price Tag",note:"쿨링 시 냉장보관 가능, 마감 시 냉장보관"},
+{cat:"소스",name:"프라푸치노 로스트 믹스",store:"실온",portion:"48H",pack:"",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"소스",name:"시그니처 초콜릿 믹스",store:"실온",portion:"2d",pack:"",tag:"숫자 Tag + Price Tag",note:"마감 시 냉장보관"},
+{cat:"소스",name:"시그니처 초콜릿 믹스 우유 포함",store:"실온",portion:"당일",pack:"",tag:"숫자 Tag",note:""},
+
+{cat:"폼",name:"얼그레이 폼",store:"냉장",portion:"24H",pack:"",tag:"숫자 Tag + Price Tag",note:"제조 후 24H"},
+{cat:"폼",name:"콜드 폼",store:"냉장",portion:"24H",pack:"",tag:"숫자 Tag + Price Tag",note:"제조 후 24H"},
+{cat:"폼",name:"인절미 크림",store:"냉장",portion:"24H",pack:"",tag:"숫자 Tag + Price Tag",note:"제조 후 24H / DID,스팀스푼"},
+{cat:"폼",name:"요거트 크림",store:"냉장",portion:"24H",pack:"",tag:"숫자 Tag + Price Tag",note:"제조 후 24H / DID,스팀스푼"},
+{cat:"폼",name:"슈 폼",store:"냉장",portion:"24H",pack:"",tag:"숫자 Tag + Price Tag",note:"제조 후 24H"},
+
+{cat:"소스/시럽",name:"25 화이트 초콜릿 맛 모카시럽",store:"실온",portion:"2d",pack:"14d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"소스/시럽",name:"카라멜향 시럽 N",store:"실온",portion:"소분 X",pack:"14d",tag:"수기기입 또는 Price Tag",note:"드리즐용 키트 24시간"},
+{cat:"소스/시럽",name:"흑당 시럽 850ml",store:"실온",portion:"소분 X",pack:"14d",tag:"수기기입 또는 Price Tag",note:""},
+{cat:"소스/시럽",name:"클래식 시럽 750ml CJ",store:"실온",portion:"소분 X",pack:"14d",tag:"수기기입 또는 Price Tag",note:"클래식/바닐라/스위트/헤이즐넛/토피넛 동일 기준"},
+{cat:"소스/시럽",name:"바닐라 시럽 750ml CJ",store:"실온",portion:"소분 X",pack:"14d",tag:"수기기입 또는 Price Tag",note:""},
+{cat:"소스/시럽",name:"스위트 시럽 750ml CJ",store:"실온",portion:"소분 X",pack:"14d",tag:"수기기입 또는 Price Tag",note:""},
+{cat:"소스/시럽",name:"헤이즐넛 시럽 750ml CJ",store:"실온",portion:"소분 X",pack:"14d",tag:"수기기입 또는 Price Tag",note:""},
+{cat:"소스/시럽",name:"토피넛 시럽 750ml CJ",store:"실온",portion:"소분 X",pack:"14d",tag:"수기기입 또는 Price Tag",note:""},
+{cat:"소스/시럽",name:"솔티드 카라멜 시럽 850ml",store:"실온",portion:"소분 X",pack:"14d",tag:"수기기입 또는 Price Tag",note:""},
+{cat:"소스/시럽",name:"심플시럽 DT Bar / 휘핑제조용",store:"실온",portion:"소분 X",pack:"14d",tag:"수기기입 또는 Price Tag",note:""},
+{cat:"소스/시럽",name:"베르가못 시럽 850ml",store:"실온",portion:"소분 X",pack:"14d",tag:"수기기입 또는 Price Tag",note:""},
+{cat:"소스/시럽",name:"심플시럽 컨디바용",store:"실온",portion:"소분 X",pack:"7d",tag:"병하단 Price Tag",note:"고객 제공용"},
+{cat:"소스/시럽",name:"커피향시럽",store:"실온",portion:"3d",pack:"전량 소분",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"소스/시럽",name:"크림향시럽 저당 포함",store:"실온",portion:"3d",pack:"전량 소분",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"소스/시럽",name:"프렌치 바닐라 시럽 850ml",store:"실온",portion:"소분 X",pack:"14d",tag:"수기기입 또는 Price Tag",note:""},
+{cat:"소스/시럽",name:"인절미 소스",store:"냉장",portion:"7d",pack:"",tag:"수기기입 또는 Price Tag",note:""},
+{cat:"소스/시럽",name:"뉴 자몽 망고 소스",store:"냉장",portion:"7d",pack:"",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"소스/시럽",name:"스위트 바닐라 소스",store:"실온",portion:"3d",pack:"7d",tag:"숫자 Tag + Price Tag",note:"개봉 후 잔량 냉장보관"},
+
+{cat:"토핑",name:"LIME / 25g 건라임",store:"실온",portion:"5d",pack:"1M",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"토핑",name:"동결 건조 딸기 슬라이스 로컬 50g",store:"실온",portion:"3d",pack:"3M",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"토핑",name:"망고 용과 토핑 25g",store:"실온",portion:"3d",pack:"3M",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"토핑",name:"New 프라푸치노 칩 자바칩",store:"냉장",portion:"7d",pack:"7d",tag:"수기기입 또는 Price Tag",note:"부분소분, 실온 보관 시 당일 숫자 Tag"},
+{cat:"토핑",name:"초코 쉘",store:"실온",portion:"1d",pack:"7d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"토핑",name:"레인보우 미니구슬 100g",store:"실온",portion:"7d",pack:"",tag:"숫자 Tag + Price Tag",note:"개봉 보관시 표시일까지"},
+{cat:"토핑",name:"초콜릿 땅콩 토핑 100g",store:"실온",portion:"7d",pack:"3M",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"토핑",name:"냉동 수박 다이스 100g",store:"냉동",portion:"",pack:"",tag:"",note:"소비기한까지"},
+{cat:"토핑",name:"그래놀라 믹스",store:"실온",portion:"7d",pack:"3M",tag:"소분 후 숫자 Tag + Price Tag / 개봉 후 수기기입 또는 Price Tag",note:"소분-그래놀라 통"},
+{cat:"토핑",name:"팥앙금 찹살떡 30PC",store:"실온",portion:"3d",pack:"7d",tag:"소분 후 숫자 Tag + Price Tag / 개봉 후 수기기입 또는 Price Tag",note:""},
+{cat:"토핑",name:"팥앙금 찹살떡 반절",store:"실온",portion:"3d",pack:"",tag:"소분 후 숫자 Tag + Price Tag / 개봉 후 수기기입 또는 Price Tag",note:"DID"},
+{cat:"토핑",name:"쿠키 토핑",store:"실온",portion:"7d",pack:"",tag:"숫자 Tag + Price Tag",note:"개봉 후 밀봉보관 소비기한까지"},
+{cat:"토핑",name:"망고 별 토핑",store:"냉장",portion:"3d",pack:"",tag:"숫자 Tag + Price Tag",note:"DID,2티스쿱"},
+
+{cat:"대체유",name:"연유소스",store:"실온",portion:"2d",pack:"2d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"대체유",name:"스위트블랜디드",store:"실온",portion:"2d",pack:"2d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"대체유",name:"두유",store:"냉장",portion:"소분 X",pack:"3d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"대체유",name:"오트밀크 1,000ml",store:"냉장",portion:"소분 X",pack:"3d",tag:"숫자 Tag + Price Tag",note:""},
+
+{cat:"유제품",name:"휘핑 크림 프릿츠골드",store:"냉장",portion:"24H",pack:"24H",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"유제품",name:"휘핑 크림 데빅 듀오 휩 1L",store:"냉장",portion:"24H",pack:"24H",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"유제품",name:"무지방 우유 1,000ml",store:"냉장",portion:"소분 X",pack:"2d",tag:"냉장고 예시문구 부착대체",note:"개봉 후 다음날까지 사용합니다"},
+{cat:"유제품",name:"일반우유 1,000ml",store:"냉장",portion:"소분 X",pack:"2d",tag:"냉장고 예시문구 부착대체",note:"개봉 후 다음날까지 사용합니다"},
+{cat:"유제품",name:"저지방우유 1,000ml",store:"냉장",portion:"소분 X",pack:"2d",tag:"냉장고 예시문구 부착대체",note:"개봉 후 다음날까지 사용합니다"},
+{cat:"유제품",name:"바닐라 크림 베이스 1,000ml",store:"냉장",portion:"당일",pack:"",tag:"숫자 Tag + Price Tag",note:""},
+
+{cat:"티백",name:"티바나 더블스트랭스 티",store:"실온",portion:"소분 X",pack:"3M",tag:"수기기입 또는 Price Tag",note:"개봉일~만료일"},
+{cat:"티백",name:"제주 녹차 티백",store:"실온",portion:"",pack:"1M",tag:"수기기입 또는 Price Tag",note:"개봉일~만료일"},
+{cat:"티백",name:"1CS티백",store:"실온",portion:"",pack:"-",tag:"",note:"티백유통기한까지"},
+
+{cat:"사인판",name:"초콜릿사인판",store:"실온",portion:"소비기한까지",pack:"",tag:"DID 소분가능, Price Tag",note:"원팩 반드시 보관"},
+
+{cat:"파우더",name:"모카 파우더 885g",store:"실온",portion:"7d",pack:"3M",tag:"소분 후 숫자 Tag + Price Tag / 개봉 후 수기기입 또는 Price Tag",note:"소분 X"},
+{cat:"파우더",name:"초콜릿 드링크 믹스 532g",store:"실온",portion:"7d",pack:"3M",tag:"소분 후 숫자 Tag + Price Tag / 개봉 후 수기기입 또는 Price Tag",note:"소분 X"},
+{cat:"파우더",name:"요거트 파우더 1,000g",store:"실온",portion:"7d",pack:"3M",tag:"소분 후 숫자 Tag + Price Tag / 개봉 후 수기기입 또는 Price Tag",note:"소분 X"},
+{cat:"파우더",name:"스노우 폼파우더 300g",store:"실온",portion:"7d",pack:"3M",tag:"소분 후 숫자 Tag + Price Tag / 개봉 후 수기기입 또는 Price Tag",note:"소분 X"},
+{cat:"파우더",name:"유기농 100% 말차 100g",store:"실온",portion:"7d",pack:"3M",tag:"소분 후 숫자 Tag + Price Tag / 개봉 후 수기기입 또는 Price Tag",note:"소분 X"},
+{cat:"파우더",name:"얼그레이 파우더",store:"실온",portion:"7d",pack:"3M",tag:"소분 후 숫자 Tag + Price Tag / 개봉 후 수기기입 또는 Price Tag",note:"소분 X"},
+{cat:"파우더",name:"우유 베이스 파우더",store:"실온",portion:"7d",pack:"3M",tag:"소분 후 숫자 Tag + Price Tag / 개봉 후 수기기입 또는 Price Tag",note:""},
+{cat:"파우더",name:"콩고물 파우더",store:"실온",portion:"7d",pack:"3M",tag:"소분 후 숫자 Tag + Price Tag / 개봉 후 수기기입 또는 Price Tag",note:"바닥 숫자텍"},
+
+{cat:"베이스",name:"허니 자몽 소스 1.4kg",store:"실온",portion:"2d",pack:"14d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"딸기 베이스 1,000ml 냉장",store:"냉장",portion:"2d",pack:"3d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"복숭아 소스 500g 냉장",store:"냉장",portion:"3d",pack:"7d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"핑크 자몽 베이스 1,000ml 냉장",store:"냉장",portion:"소분 X",pack:"7d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"유자 진저 베이스 1,000ml 냉장",store:"냉장",portion:"소분 X",pack:"7d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"망고패션후르츠 블랜드 NEW",store:"냉장",portion:"소분 X",pack:"7d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"딸기 리프레셔 베이스 1L",store:"냉장",portion:"소분 X",pack:"7d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"라임 비버리지 베이스 1L",store:"냉장",portion:"소분 X",pack:"7d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"스타벅스 레모네이드 1L",store:"냉장",portion:"소분 X",pack:"7d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"체리 자두 베이스 1,000ml",store:"냉장",portion:"소분 X",pack:"7d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"피치 베이스 1,000ml",store:"냉장",portion:"소분 X",pack:"7d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"폼 베이스 1,000ml",store:"냉장",portion:"소분 X",pack:"2d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"수박 베이스 1L",store:"냉장",portion:"소분 X",pack:"7d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"통팥 베이스",store:"실온",portion:"3d",pack:"",tag:"숫자 Tag + Price Tag",note:"전량소분, 냉장 또는 실온보관, 마감시 반드시 냉장보관"},
+{cat:"베이스",name:"애플 망고 베이스",store:"냉장",portion:"3d",pack:"",tag:"숫자 Tag + Price Tag",note:"DID,5T스쿱"},
+{cat:"베이스",name:"키위 베이스 1,000ml 냉장",store:"냉장",portion:"소분 X",pack:"7d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"슈크림 말차 베이스",store:"냉장",portion:"24H",pack:"",tag:"숫자 Tag + Price Tag",note:"믹싱 피처"},
+{cat:"베이스",name:"오미자 베이스 냉장",store:"냉장",portion:"소분 X",pack:"7d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"블루 라임 베이스 1,000ml 냉장",store:"냉장",portion:"소분 X",pack:"7d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"쌀 베이스",store:"냉장",portion:"소분 X",pack:"3d",tag:"숫자 Tag + Price Tag",note:""},
+{cat:"베이스",name:"막걸리 베이스",store:"냉장",portion:"",pack:"24H",tag:"숫자 Tag + Price Tag",note:"제조 후 24H"},
+
+{cat:"코어 원재료",name:"유제품",store:"냉장",portion:"24H",pack:"",tag:"숫자 Tag + Price Tag",note:"제조 후 24H"},
+{cat:"코어 원재료",name:"베이스",store:"냉장",portion:"24H",pack:"",tag:"숫자 Tag + Price Tag",note:"제조 후 24H"}
+];
+
+const dayNames=["일요일","월요일","화요일","수요일","목요일","금요일","토요일"];
+const dayClass=["sun","mon","tue","wed","thu","fri","sat"];
+let selected=null;
+const $=id=>document.getElementById(id);
+
+const today=new Date();
+
+$("baseDate").value=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+
+$("baseHour").innerHTML=Array.from({length:24},(_,i)=>
+  `<option value="${i}">${String(i).padStart(2,"0")}시</option>`
+).join("");
+
+$("baseHour").value=today.getHours();
+
+function norm(s){
+  return String(s||"").toLowerCase().replace(/\s/g,"");
+}
+
+function parseRule(rule){
+  if(!rule)return null;
+  rule=String(rule).trim();
+
+  if(["소분 X","전량 소분","소비기한까지","-","71℃ 이상"].includes(rule))return null;
+  if(rule==="당일")return{type:"day",n:1};
+
+  let m=rule.match(/^(\d+)\s*H$/i);
+  if(m)return{type:"hour",n:+m[1]};
+
+  m=rule.match(/^(\d+)\s*d$/i);
+  if(m)return{type:"day",n:+m[1]};
+
+  m=rule.match(/^(\d+)\s*M$/i);
+  if(m)return{type:"month",n:+m[1]};
+
+  return null;
+}
+
+function hasCalc(v){
+  return !!parseRule(v);
+}
+
+function renderList(){
+  const q=norm($("search").value);
+  let rows=q
+    ? DATA.filter(x=>norm(x.name+" "+x.cat+" "+x.store+" "+x.note).includes(q))
+    : DATA;
+
+  rows=rows.slice(0,100);
+
+  $("list").innerHTML=rows.length
+    ? rows.map(x=>`
+      <div class="item" onclick="pick(${DATA.indexOf(x)})">
+        <b>${x.name}</b>
+        <span>${x.cat} · 보관 ${x.store||"-"} · 소분 후 ${x.portion||"-"} · 개봉 후 ${x.pack||"-"}</span>
+      </div>
+    `).join("")
+    : `<div class="empty">검색 결과 없음</div>`;
+}
+
+function pick(idx){
+  selected=DATA[idx];
+
+  $("result").classList.add("show");
+  $("rName").textContent=selected.name;
+  $("rCat").textContent=selected.cat;
+  $("rStore").textContent=selected.store||"-";
+  $("rStore2").textContent=selected.store||"-";
+  $("rPortion").textContent=selected.portion||"-";
+  $("rPack").textContent=selected.pack||"-";
+  $("rTag").textContent=selected.tag||"-";
+  $("rNote").textContent=selected.note||"-";
+
+  $("mode").innerHTML=`
+    <option value="portion">소분/제조일 기준: ${selected.portion||"-"}</option>
+    <option value="pack">개봉일 기준: ${selected.pack||"-"}</option>
+  `;
+
+  $("mode").value=hasCalc(selected.portion)?"portion":"pack";
+
+  calc();
+
+  setTimeout(()=>$("result").scrollIntoView({behavior:"smooth",block:"start"}),80);
+}
+
+function addMonths(d,n){
+  const x=new Date(d);
+  x.setMonth(x.getMonth()+n);
+  return x;
+}
+
+function calc(){
+  if(!selected)return;
+
+  const mode=$("mode").value;
+  const ruleText=mode==="portion"?selected.portion:selected.pack;
+  const rule=parseRule(ruleText);
+  const box=$("expireBox");
+
+  box.className="expireBox";
+
+  if(!rule){
+    $("expireDate").textContent="자동 계산 불가";
+    $("expireMeta").textContent=`선택 기준: ${ruleText||"-"} · 날짜 계산 불가 기준`;
+    return;
+  }
+
+  const hour=String($("baseHour").value).padStart(2,"0");
+  const base=new Date($("baseDate").value+`T${hour}:00:00`);
+  let exp=new Date(base);
+
+  if(rule.type==="hour")exp.setHours(exp.getHours()+rule.n);
+  if(rule.type==="day")exp.setDate(exp.getDate()+rule.n-1);
+  if(rule.type==="month"){
+    exp=addMonths(exp,rule.n);
+    exp.setDate(exp.getDate()-1);
+  }
+
+  const dow=exp.getDay();
+  box.classList.add(dayClass[dow]);
+
+  const y=exp.getFullYear();
+  const m=String(exp.getMonth()+1).padStart(2,"0");
+  const d=String(exp.getDate()).padStart(2,"0");
+  const time=rule.type==="hour"
+    ? ` ${String(exp.getHours()).padStart(2,"0")}:00`
+    : "";
+
+  $("expireDate").textContent=`${y}-${m}-${d}${time}`;
+  $("expireMeta").textContent=`${dayNames[dow]} · ${mode==="portion"?"소분/제조일":"개봉일"} 기준 ${ruleText} · 당일 포함`;
+}
+
+$("search").addEventListener("input",renderList);
+$("mode").addEventListener("change",calc);
+$("baseDate").addEventListener("change",calc);
+$("baseHour").addEventListener("change",calc);
+
+renderList();
+</script>
+</body>
+</html>
